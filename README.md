@@ -7,7 +7,9 @@ cd tfgrid_monitoring_bot
 
 2. Create a .env file containing the following vars [MNEMONICS, TFTS_LIMIT, BOT_TOKEN, CHAT_ID, MINS] where mins is the time between each call.
 
-3.
+3. add the list of addresses you want to monitor in app.ts file.
+
+4.
 
 ```
 yarn install
