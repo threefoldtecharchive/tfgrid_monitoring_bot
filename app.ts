@@ -23,20 +23,20 @@ const mins : number = +minutesProvided;
 const tftsLimit : string = process.env.TFTS_LIMIT as string;
 const tfts : number = +tftsLimit;
 
-const addresses = ["5Gv79EKyAmEAv3h1SyEY9tqq3a9j6NB1rWnkfJsVQBTTRpHc", "5Gv79EKyAmEAv3h1SyEY9tqq3a9j6NB1rWnkfJsVQBTTRpHc"]
+const addresses = ["5Gv79EKyAmEAv3h1SyEY9tqq3a9j6NB1rWnkfJsVQBTTRpHc", "5Covf4nJf8gWiqXbyCBfbaFgWoxnnp3F1ZUiDWixx3Lds9bz", "5FfAv7qUb3oa8TfdeLCEicirtdGvXHnV2owtsv5XNa9aDzEu"]
 
-
-
-async function monitor(address:string) {
-    const gridClient = new GridClient(
+const gridClient = new GridClient(
             NetworkEnv.dev,
             mnemonics,
             "secret",
             rmb,
     );
-    await gridClient.connect()
     
-
+async function connect() {
+    await gridClient.connect()
+} 
+connect() 
+async function monitor(address:string) {
     
         const balance = await gridClient.tfchain.balanceByAddress({
                 address: address,
@@ -46,14 +46,14 @@ async function monitor(address:string) {
                 let msg = `account with address: ${address} has balance = ${balance.free}`
                 telegram.sendMessage(chatId, msg)
             }
-        await gridClient.disconnect()
-    
-    
+        
+       
 }
 
 setInterval(() => {
     for(let i = 0; i < addresses.length; i++){
-        monitor(addresses[i])
+        monitor(addresses[i])    
     } 
+    async() => await gridClient.disconnect()
     // num of mins to wait before monitoring addresses
 }, mins * 60000)
