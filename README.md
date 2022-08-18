@@ -16,7 +16,13 @@ cd tfgrid_monitoring_bot
 ```
 yarn install
 ```
-- to run the project via docker:
+
+- To run the project locally:
+```
+yarn ts-node app.ts
+```
+
+- To run the project via docker:
 
 ```
 docker build -t <tag> .
