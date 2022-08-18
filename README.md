@@ -1,3 +1,5 @@
+# This is a telegram bot that monitors a list of addresses and send a warning if they became under a specific limit
+
 # To run the project:
 1. 
 
