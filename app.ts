@@ -18,19 +18,10 @@ const minutesProvided : string = process.env.MINS as string;
 const mins : number = +minutesProvided;
 const tftsLimit : string = process.env.TFTS_LIMIT as string;
 const tfts : number = +tftsLimit;
-const gridClient = new GridClient(
-            NetworkEnv.dev,
-            mnemonics,
-            "secret",
-            rmb,
-    );
-    
-async function connect(): Promise<GridClient> {
-    return gridClient.connect()
-} 
 
 async function monitor(client: GridClient) {
     for (let addr of addresses) {
+        console.log(`checking {addr}`)
         const balance = await client.tfchain.balanceByAddress({
                 address: addr,
         });
@@ -44,6 +35,16 @@ async function monitor(client: GridClient) {
 }
 
 setInterval(() => {
-    connect().then( (client) => monitor(client))
+    async() => {
+        const gridClient = new GridClient(
+            NetworkEnv.dev,
+            mnemonics,
+            "secret",
+            rmb,
+        );
+        console.log(`client loaded`)
+        await gridClient.connect() 
+        monitor(gridClient)
+    }
     // num of seconds to wait before monitoring addresses
 }, mins * 60000)
