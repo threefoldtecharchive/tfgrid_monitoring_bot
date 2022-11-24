@@ -277,7 +277,7 @@ func TestMonitor(t *testing.T) {
 		}
 	})
 
-	t.Run("test_send_message_low_limit", func(t *testing.T) {
+	t.Run("test_send_message_low_threshold", func(t *testing.T) {
 
 		monitor, err := NewMonitor(envFile.Name(), jsonFile.Name())
 

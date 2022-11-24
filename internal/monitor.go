@@ -35,8 +35,8 @@ type config struct {
 }
 
 type wallet struct {
-	address address
-	limit   int
+	address   address
+	threshold int
 }
 type wallets struct {
 	mainnet []wallet
@@ -122,14 +122,14 @@ func (m *monitor) getTelegramUrl() string {
 }
 
 // sendMessage sends a message with the balance to a telegram bot
-// if it is less than the tft limit
+// if it is less than the tft threshold
 func (m *monitor) sendMessage(manager client.Manager, wallet wallet) error {
 	balance, err := m.getBalance(manager, wallet.address)
 	if err != nil {
 		return err
 	}
 
-	if balance >= float64(wallet.limit) {
+	if balance >= float64(wallet.threshold) {
 		return nil
 	}
 

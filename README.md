@@ -1,6 +1,6 @@
 # tfgrid monitoring bot
 
-This is a bot to monitor the balance in accounts and send warnings if it is under some limit.
+This is a bot to monitor the balance in accounts and send warnings if it is under some threshold.
 
 ## How to start
 

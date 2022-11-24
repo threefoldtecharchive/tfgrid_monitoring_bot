@@ -33,7 +33,7 @@ func parseJsonIntoWallets(content []byte) (w wallets, err error) {
 		for _, walletMap := range addresses["mainnet"] {
 			mainnetWallet := wallet{}
 			mainnetWallet.address = address(walletMap["addr"].(string))
-			mainnetWallet.limit = int(walletMap["threshold"].(float64))
+			mainnetWallet.threshold = int(walletMap["threshold"].(float64))
 			w.mainnet = append(w.mainnet, mainnetWallet)
 		}
 	}
@@ -44,7 +44,7 @@ func parseJsonIntoWallets(content []byte) (w wallets, err error) {
 		for _, walletMap := range addresses["testnet"] {
 			testnetWallet := wallet{}
 			testnetWallet.address = address(walletMap["addr"].(string))
-			testnetWallet.limit = int(walletMap["threshold"].(float64))
+			testnetWallet.threshold = int(walletMap["threshold"].(float64))
 			w.testnet = append(w.testnet, testnetWallet)
 		}
 	}
