@@ -1,9 +1,11 @@
-FROM node:16-alpine AS Build
-WORKDIR /app
-COPY package.json ./
-RUN yarn install
+FROM golang:1.19-alpine
 
-FROM node:16-alpine
-COPY --from=Build /app/node_modules ./node_modules
-COPY package.json app.ts .env ./
-CMD ["yarn", "ts-node","app.ts"]
+WORKDIR /tfgrid_monitoring_bot
+
+COPY . .
+
+RUN go mod tidy
+
+RUN go build -o tfgridmon main.go 
+
+CMD ./tfgridmon -e .env -w wallets.json
