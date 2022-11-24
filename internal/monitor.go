@@ -29,15 +29,18 @@ var SUBSTRATE_URLS = map[network][]string{
 type config struct {
 	testMnemonic string
 	mainMnemonic string
-	tftLimit     int
 	botToken     string
 	chatId       string
 	intervalMins int
 }
 
+type wallet struct {
+	address address
+	limit   int
+}
 type wallets struct {
-	mainnet []address
-	testnet []address
+	mainnet []wallet
+	testnet []wallet
 }
 
 type monitor struct {
@@ -94,7 +97,7 @@ func (m *monitor) Start() {
 	for range ticker.C {
 		for network, manager := range m.substrate {
 
-			wallets := []address{}
+			wallets := []wallet{}
 			switch network {
 			case mainNetwork:
 				wallets = m.wallets.mainnet
@@ -120,20 +123,20 @@ func (m *monitor) getTelegramUrl() string {
 
 // sendMessage sends a message with the balance to a telegram bot
 // if it is less than the tft limit
-func (m *monitor) sendMessage(manager client.Manager, address address) error {
-	balance, err := m.getBalance(manager, address)
+func (m *monitor) sendMessage(manager client.Manager, wallet wallet) error {
+	balance, err := m.getBalance(manager, wallet.address)
 	if err != nil {
 		return err
 	}
 
-	if balance >= float64(m.env.tftLimit) {
+	if balance >= float64(wallet.limit) {
 		return nil
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramUrl())
 	body, _ := json.Marshal(map[string]string{
 		"chat_id": m.env.chatId,
-		"text":    fmt.Sprintf("account with address:\n%v\nhas balance = %v", address, balance),
+		"text":    fmt.Sprintf("account with address:\n%v\nhas balance = %v", wallet.address, balance),
 	})
 	response, err := http.Post(
 		url,
