@@ -24,12 +24,8 @@ MINS=<number of minutes between each message>
 }
 ```
 
-- Run
-  
-```bash
-make build
-bin/tfgridmon -e .env -w wallets.json
-```
+- Get the binary
+Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases/tag/v1.0.0) 
 
 ## Create a bot if you don't have
 
