@@ -1,6 +1,6 @@
 # tfgrid monitoring bot
 
-This is a bot to monitor the balance in accounts and send warnings if it is under some limit.
+This is a bot to monitor the balance in accounts and send warnings if it is under some threshold.
 
 ## How to start
 
@@ -10,7 +10,6 @@ This is a bot to monitor the balance in accounts and send warnings if it is unde
 ```env
 TESTNET_MNEMONIC=<your mainnet mnemonic>
 MAINNET_MNEMONIC=<your testnet mnemonic>
-TFTS_LIMIT=70000
 BOT_TOKEN=<your token>
 CHAT_ID=<your chat ID>
 MINS=<number of minutes between each message>
@@ -20,8 +19,8 @@ MINS=<number of minutes between each message>
 
 ```json
 { 
-    "mainnet": ["<your address>"],
-    "testnet": ["<your address>"] 
+    "testnet": [{ "addr": "<your address>" , "threshold": 700 }],
+    "mainnet": [{ "addr": "<your address>" , "threshold": 700 }]
 }
 ```
 

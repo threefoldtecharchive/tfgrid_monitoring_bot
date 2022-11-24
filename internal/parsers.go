@@ -19,7 +19,7 @@ func readFile(path string) ([]byte, error) {
 }
 
 func parseJsonIntoWallets(content []byte) (w wallets, err error) {
-	addresses := map[string][]address{}
+	addresses := map[string][]map[string]interface{}{}
 	err = json.Unmarshal(content, &addresses)
 
 	if err != nil {
@@ -30,13 +30,23 @@ func parseJsonIntoWallets(content []byte) (w wallets, err error) {
 	if _, ok := addresses["mainnet"]; !ok {
 		return w, errors.New("mainnet addresses is missing")
 	} else {
-		w.mainnet = addresses["mainnet"]
+		for _, walletMap := range addresses["mainnet"] {
+			mainnetWallet := wallet{}
+			mainnetWallet.address = address(walletMap["addr"].(string))
+			mainnetWallet.threshold = int(walletMap["threshold"].(float64))
+			w.mainnet = append(w.mainnet, mainnetWallet)
+		}
 	}
 
 	if _, ok := addresses["testnet"]; !ok {
 		return w, errors.New("testnet addresses is missing")
 	} else {
-		w.testnet = addresses["testnet"]
+		for _, walletMap := range addresses["testnet"] {
+			testnetWallet := wallet{}
+			testnetWallet.address = address(walletMap["addr"].(string))
+			testnetWallet.threshold = int(walletMap["threshold"].(float64))
+			w.testnet = append(w.testnet, testnetWallet)
+		}
 	}
 
 	return w, err
@@ -47,7 +57,6 @@ func parseEnv(content string) (config, error) {
 
 	testMnemonic := ""
 	mainMnemonic := ""
-	tftLimit := 0
 	botToken := ""
 	chatId := ""
 	mins := 0
@@ -65,13 +74,6 @@ func parseEnv(content string) (config, error) {
 
 		case "MAINNET_MNEMONIC":
 			mainMnemonic = value
-
-		case "TFTS_LIMIT":
-			limit, err := strconv.Atoi(value)
-			if err != nil {
-				return env, err
-			}
-			tftLimit = limit
 
 		case "BOT_TOKEN":
 			botToken = value
@@ -96,8 +98,6 @@ func parseEnv(content string) (config, error) {
 		return env, fmt.Errorf("TESTNET_MNEMONIC is missing")
 	case mainMnemonic == "":
 		return env, fmt.Errorf("MAINNET_MNEMONIC is missing")
-	case tftLimit == 0:
-		return env, fmt.Errorf("TFTS_LIMIT is 0")
 	case botToken == "":
 		return env, fmt.Errorf("BOT_TOKEN is missing")
 	case chatId == "":
@@ -109,7 +109,6 @@ func parseEnv(content string) (config, error) {
 	return config{
 		testMnemonic: testMnemonic,
 		mainMnemonic: mainMnemonic,
-		tftLimit:     tftLimit,
 		botToken:     botToken,
 		chatId:       chatId,
 		intervalMins: mins,

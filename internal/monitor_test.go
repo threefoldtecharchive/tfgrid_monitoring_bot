@@ -28,7 +28,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=700
 			BOT_TOKEN=TOKEN
 			CHAT_ID=ID
 			MINS=1
@@ -45,7 +44,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=
-			TFTS_LIMIT=700
 			BOT_TOKEN=TOKEN
 			CHAT_ID=ID
 			MINS=1
@@ -58,28 +56,10 @@ func TestParsers(t *testing.T) {
 		}
 	})
 
-	t.Run("test_wrong_env_0_limit", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=0
-			BOT_TOKEN=token
-			CHAT_ID=ID
-			MINS=1
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, TFTS_LIMIT is 0")
-		}
-	})
-
 	t.Run("test_wrong_env_no_token", func(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=8
 			BOT_TOKEN=
 			CHAT_ID=ID
 			MINS=1
@@ -96,7 +76,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=8
 			BOT_TOKEN=token
 			CHAT_ID=
 			MINS=1
@@ -113,7 +92,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=8
 			BOT_TOKEN=token
 			CHAT_ID=id
 			MINS=0
@@ -130,7 +108,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=8
 			BOT_TOKEN=token
 			CHAT_ID=id
 			MINS=min
@@ -143,28 +120,11 @@ func TestParsers(t *testing.T) {
 		}
 	})
 
-	t.Run("test_wrong_env_string_limit", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=limit
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=10
-		`
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, TFTS_LIMIT is string")
-		}
-	})
-
 	t.Run("test_wrong_env_key", func(t *testing.T) {
 		envContent := `
 			key=key
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=10
 			BOT_TOKEN=token
 			CHAT_ID=id
 			MINS=10
@@ -180,7 +140,6 @@ func TestParsers(t *testing.T) {
 		envContent := `
 			TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=10
 			BOT_TOKEN=token
 			CHAT_ID=id
 			MINS=10
@@ -195,8 +154,8 @@ func TestParsers(t *testing.T) {
 	t.Run("test_valid_json", func(t *testing.T) {
 		content := `
 		{ 
-			"mainnet": [],
-			"testnet": []   
+			"mainnet": [ { "addr": "addr", "threshold": 1} ],
+			"testnet": [ { "addr": "addr", "threshold": 1} ]   
 		}
 		`
 		_, err := parseJsonIntoWallets([]byte(content))
@@ -245,8 +204,8 @@ func TestMonitor(t *testing.T) {
 	defer os.Remove(jsonFile.Name())
 
 	data := []byte(`{ 
-		"mainnet": [""],
-		"testnet": [""]   
+		"mainnet": [ { "addr": "addr", "threshold": 1} ],
+		"testnet": [ { "addr": "addr", "threshold": 1} ] 
 	}`)
 	if _, err := jsonFile.Write(data); err != nil {
 		t.Error(err)
@@ -263,7 +222,6 @@ func TestMonitor(t *testing.T) {
 
 	data = []byte(`TESTNET_MNEMONIC=mnemonic
 	MAINNET_MNEMONIC=mnemonic
-	TFTS_LIMIT=1
 	BOT_TOKEN=token
 	CHAT_ID=id
 	MINS=10`)
@@ -306,20 +264,20 @@ func TestMonitor(t *testing.T) {
 	t.Run("test_invalid_monitor_token", func(t *testing.T) {
 
 		monitor, err := NewMonitor(envFile.Name(), jsonFile.Name())
-
 		if err != nil {
 			t.Errorf("monitor should be successful")
 		}
 
+		wallet := wallet{"", 1}
+
 		monitor.env.botToken = ""
-		monitor.env.tftLimit = 10000000000000
-		err = monitor.sendMessage(substrate[testNetwork], "")
+		err = monitor.sendMessage(substrate[testNetwork], wallet)
 		if err == nil {
 			t.Errorf("sending a message should fail")
 		}
 	})
 
-	t.Run("test_send_message_low_limit", func(t *testing.T) {
+	t.Run("test_send_message_low_threshold", func(t *testing.T) {
 
 		monitor, err := NewMonitor(envFile.Name(), jsonFile.Name())
 
@@ -327,7 +285,9 @@ func TestMonitor(t *testing.T) {
 			t.Errorf("monitor should be successful")
 		}
 
-		err = monitor.sendMessage(substrate[testNetwork], "")
+		wallet := wallet{"", 1}
+
+		err = monitor.sendMessage(substrate[testNetwork], wallet)
 		if err == nil {
 			t.Errorf("no message should be sent")
 		}
@@ -387,7 +347,6 @@ func TestWrongFilesContent(t *testing.T) {
 
 		data = []byte(`TESTNET_MNEMONIC=mnemonic
 			MAINNET_MNEMONIC=mnemonic
-			TFTS_LIMIT=1
 			BOT_TOKEN=token
 			CHAT_ID=id
 			MINS=10`)
