@@ -1,48 +1,64 @@
-# This is a telegram bot that monitors a list of addresses and send a warning if they became under a specific limit
+# tfgrid monitoring bot
 
-# To run the project:
-1. 
+This is a bot to monitor the balance in accounts and send warnings if it is under some limit.
 
-```
-cd tfgrid_monitoring_bot
-```
+## How to start
 
-2. Create a .env file containing the following vars [MNEMONICS, TFTS_LIMIT, BOT_TOKEN, CHAT_ID, MINS] where mins is the time between each call.
+- Create a new [telegram bot](README.md#create-a-bot-if-you-dont-have) if you don't have.
+- Create a new env file `.env`, for example:
 
-3. add the list of addresses you want to monitor in app.ts file.
-
-4.
-
-```
-yarn install
-```
-
-- To run the project locally:
-```
-yarn ts-node app.ts
+```env
+TESTNET_MNEMONIC=<your mainnet mnemonic>
+MAINNET_MNEMONIC=<your testnet mnemonic>
+TFTS_LIMIT=70000
+BOT_TOKEN=<your token>
+CHAT_ID=<your chat ID>
+MINS=<number of minutes between each message>
 ```
 
-- To run the project via docker:
+- Create a new json file `wallets.json` and add the list of addresses you want to monitor, for example:
 
+```json
+{ 
+    "mainnet": ["<your address>"],
+    "testnet": ["<your address>"] 
+}
 ```
-docker build -t <tag> .
-docker run -d <image name>
-```
-- To have your own flist:
 
+- Run
+  
+```bash
+make build
+bin/tfgridmon -e .env -w wallets.json
 ```
-docker push <DockerHub_username/image>
-curl -f -X POST  -H "Authorization: bearer <ZeroHub_Token>" https://hub.grid.tf/api/flist/me/docker -F 'image=<dockerhub_username>/<image>'
-```
-- To run the deploy a VM based on the flist:
 
-```
-cd terraform_script
-```
-change the flist value with your newly built flist link
+## Create a bot if you don't have
 
+- Open telegram app
+- Create a new bot
+  
+```ordered
+1. Find telegram bot named "@botfarther"
+2. Type /newbot
 ```
-export MNEMONICS="<mnemonics words>"
-export NETWORK="<network>"
-terraform init && terraform apply -parallelism=1
+
+- Get the bot token
+  
+```ordered
+1. In the same bot named "@botfarther"
+2. Type /token
+3. Choose your bot
+```
+
+- Get your chat ID
+
+```ordered
+1. Search for @RawDataBot and select Telegram Bot Raw from the drop-down list.
+2. In the json returned, you will find it in section message -> chat -> id
+```
+
+## Test
+
+```bash
+make test
 ```
