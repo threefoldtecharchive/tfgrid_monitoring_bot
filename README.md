@@ -27,6 +27,16 @@ MINS=<number of minutes between each message>
 - Get the binary
 Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases/tag/v1.0.0) 
 
+- Running the bot
+
+After downloading the binary
+```bash
+tfgridmon -e .env -w wallets.json
+```
+Where
+- `.env` is the environment file 
+- `wallets.json` is the json file of wallets to be monitored  
+
 ## Create a bot if you don't have
 
 - Open telegram app
