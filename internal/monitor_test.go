@@ -204,8 +204,8 @@ func TestMonitor(t *testing.T) {
 	defer os.Remove(jsonFile.Name())
 
 	data := []byte(`{ 
-		"mainnet": [ { "addr": "addr", "threshold": 1} ],
-		"testnet": [ { "addr": "addr", "threshold": 1} ] 
+		"mainnet": [ { "addr": "addr", "threshold": 1, "name": "wallet1"} ],
+		"testnet": [ { "addr": "addr", "threshold": 1, "name": "wallet2"} ] 
 	}`)
 	if _, err := jsonFile.Write(data); err != nil {
 		t.Error(err)
@@ -268,7 +268,7 @@ func TestMonitor(t *testing.T) {
 			t.Errorf("monitor should be successful")
 		}
 
-		wallet := wallet{"", 1}
+		wallet := wallet{"", 1, "walletone"}
 
 		monitor.env.botToken = ""
 		err = monitor.sendMessage(substrate[testNetwork], wallet)
@@ -285,7 +285,7 @@ func TestMonitor(t *testing.T) {
 			t.Errorf("monitor should be successful")
 		}
 
-		wallet := wallet{"", 1}
+		wallet := wallet{"", 1, "walletone"}
 
 		err = monitor.sendMessage(substrate[testNetwork], wallet)
 		if err == nil {

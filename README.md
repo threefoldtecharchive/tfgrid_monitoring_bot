@@ -19,8 +19,8 @@ MINS=<number of minutes between each message>
 
 ```json
 { 
-    "testnet": [{ "addr": "<your address>" , "threshold": 700 }],
-    "mainnet": [{ "addr": "<your address>" , "threshold": 700 }]
+    "testnet": [{ "addr": "<your address>" , "threshold": 700, "name": "operations" }],
+    "mainnet": [{ "addr": "<your address>" , "threshold": 700, "name": "faucet"}]
 }
 ```
 

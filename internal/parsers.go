@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,34 +18,11 @@ func readFile(path string) ([]byte, error) {
 }
 
 func parseJsonIntoWallets(content []byte) (w wallets, err error) {
-	addresses := map[string][]map[string]interface{}{}
-	err = json.Unmarshal(content, &addresses)
+	w = wallets{}
+	err = json.Unmarshal(content, &w)
 
 	if err != nil {
 		return
-	}
-
-	w = wallets{}
-	if _, ok := addresses["mainnet"]; !ok {
-		return w, errors.New("mainnet addresses is missing")
-	} else {
-		for _, walletMap := range addresses["mainnet"] {
-			mainnetWallet := wallet{}
-			mainnetWallet.address = address(walletMap["addr"].(string))
-			mainnetWallet.threshold = int(walletMap["threshold"].(float64))
-			w.mainnet = append(w.mainnet, mainnetWallet)
-		}
-	}
-
-	if _, ok := addresses["testnet"]; !ok {
-		return w, errors.New("testnet addresses is missing")
-	} else {
-		for _, walletMap := range addresses["testnet"] {
-			testnetWallet := wallet{}
-			testnetWallet.address = address(walletMap["addr"].(string))
-			testnetWallet.threshold = int(walletMap["threshold"].(float64))
-			w.testnet = append(w.testnet, testnetWallet)
-		}
 	}
 
 	return w, err
