@@ -6,7 +6,6 @@ require (
 	github.com/rs/zerolog v1.26.0
 	github.com/spf13/cobra v1.6.1
 	github.com/threefoldtech/substrate-client v0.0.0-20221124101011-f107c2f64f85
-	golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9
 )
 
 require (

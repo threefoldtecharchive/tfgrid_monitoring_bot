@@ -21,13 +21,13 @@ MINS=<number of minutes between each message>
 { 
     "testnet": [{ 
         "name": "<your wallet name>", 
-        "addr": "<your address>", 
+        "address": "<your address>", 
         "threshold": 700 
     }],
 
     "mainnet": [{ 
         "name": "<your wallet name>", 
-        "addr": "<your address>", 
+        "address": "<your address>", 
         "threshold": 700 
     }]
 }

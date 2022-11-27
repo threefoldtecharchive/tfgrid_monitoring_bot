@@ -22,8 +22,8 @@ var (
 )
 
 var SUBSTRATE_URLS = map[network][]string{
-	testNetwork: {"wss://tfchain.test.grid.tf/ws"},
-	mainNetwork: {"wss://tfchain.grid.tf/ws"},
+	testNetwork: {"wss://tfchain.test.grid.tf/ws", "wss://tfchain.test.grid.tf:443"},
+	mainNetwork: {"wss://tfchain.grid.tf/ws", "wss://tfchain.grid.tf:443"},
 }
 
 type config struct {
