@@ -37,6 +37,7 @@ type config struct {
 type wallet struct {
 	address   address
 	threshold int
+	name      string
 }
 type wallets struct {
 	mainnet []wallet
@@ -136,7 +137,7 @@ func (m *monitor) sendMessage(manager client.Manager, wallet wallet) error {
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramUrl())
 	body, _ := json.Marshal(map[string]string{
 		"chat_id": m.env.chatId,
-		"text":    fmt.Sprintf("account with address:\n%v\nhas balance = %v", wallet.address, balance),
+		"text":    fmt.Sprintf("account with name:\n%v\nhas balance = %v", wallet.name, balance),
 	})
 	response, err := http.Post(
 		url,

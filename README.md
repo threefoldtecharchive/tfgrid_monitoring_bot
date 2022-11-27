@@ -19,22 +19,35 @@ MINS=<number of minutes between each message>
 
 ```json
 { 
-    "testnet": [{ "addr": "<your address>" , "threshold": 700 }],
-    "mainnet": [{ "addr": "<your address>" , "threshold": 700 }]
+    "testnet": [{ 
+        "name": "<your wallet name>", 
+        "addr": "<your address>", 
+        "threshold": 700 
+    }],
+
+    "mainnet": [{ 
+        "name": "<your wallet name>", 
+        "addr": "<your address>", 
+        "threshold": 700 
+    }]
 }
 ```
 
 - Get the binary
-Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases/tag/v1.0.0) 
 
-- Running the bot
+> Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases/tag/v1.0.0)
+
+- Run the bot
 
 After downloading the binary
+
 ```bash
 tfgrid_monitoring_bot -e .env -w wallets.json
 ```
+
 Where
-- `.env` is the environment file 
+
+- `.env` is the environment file
 - `wallets.json` is the json file of wallets to be monitored  
 
 ## Create a bot if you don't have
