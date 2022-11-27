@@ -31,7 +31,7 @@ Download the latest from the [releases page](https://github.com/threefoldtech/tf
 
 After downloading the binary
 ```bash
-tfgridmon -e .env -w wallets.json
+tfgrid_monitoring_bot -e .env -w wallets.json
 ```
 Where
 - `.env` is the environment file 
