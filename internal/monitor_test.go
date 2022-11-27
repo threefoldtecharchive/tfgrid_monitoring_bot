@@ -164,32 +164,6 @@ func TestParsers(t *testing.T) {
 			t.Errorf("parsing should be successful")
 		}
 	})
-
-	t.Run("test_invalid_json_no_test", func(t *testing.T) {
-		content := `
-		{ 
-			"mainnet": []
-		}
-		`
-		_, err := parseJsonIntoWallets([]byte(content))
-
-		if err == nil {
-			t.Errorf("parsing should fail, missing testnet")
-		}
-	})
-
-	t.Run("test_invalid_json_no_main", func(t *testing.T) {
-		content := `
-		{ 
-			"testnet": []
-		}
-		`
-		_, err := parseJsonIntoWallets([]byte(content))
-
-		if err == nil {
-			t.Errorf("parsing should fail, missing mainnet")
-		}
-	})
 }
 
 func TestMonitor(t *testing.T) {
@@ -331,33 +305,6 @@ func TestWrongFilesContent(t *testing.T) {
 
 		if err == nil {
 			t.Errorf("monitor should fail, wrong env")
-		}
-	})
-
-	t.Run("test_invalid_monitor_wrong_json", func(t *testing.T) {
-
-		//env
-		envFile, err := os.CreateTemp("", "*.env")
-		if err != nil {
-			t.Errorf("failed with error, %v", err)
-		}
-
-		defer envFile.Close()
-		defer os.Remove(envFile.Name())
-
-		data = []byte(`TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=10`)
-		if _, err := envFile.Write(data); err != nil {
-			t.Error(err)
-		}
-
-		_, err = NewMonitor(envFile.Name(), jsonFile.Name())
-
-		if err == nil {
-			t.Errorf("monitor should fail, wrong json")
 		}
 	})
 }

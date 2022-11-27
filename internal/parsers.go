@@ -2,13 +2,10 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/slices"
 )
 
 func readFile(path string) ([]byte, error) {
@@ -21,56 +18,14 @@ func readFile(path string) ([]byte, error) {
 }
 
 func parseJsonIntoWallets(content []byte) (w wallets, err error) {
-	addresses := map[string][]map[string]interface{}{}
-	names := []string{}
-	err = json.Unmarshal(content, &addresses)
+	w = wallets{}
+	err = json.Unmarshal(content, &w)
 
 	if err != nil {
 		return
 	}
 
-	w = wallets{}
-	if _, ok := addresses["mainnet"]; !ok {
-		return w, errors.New("mainnet addresses is missing")
-	} else {
-		for _, walletMap := range addresses["mainnet"] {
-			mainnetWallet := wallet{}
-
-			name := walletMap["name"].(string)
-			if slices.Contains(names, name) {
-				return w, fmt.Errorf("wallet name %v is not unique", name)
-			}
-
-			mainnetWallet.name = name
-			mainnetWallet.address = address(walletMap["addr"].(string))
-			mainnetWallet.threshold = int(walletMap["threshold"].(float64))
-
-			w.mainnet = append(w.mainnet, mainnetWallet)
-			names = append(names, name)
-		}
-	}
-
-	if _, ok := addresses["testnet"]; !ok {
-		return w, errors.New("testnet addresses is missing")
-	} else {
-		for _, walletMap := range addresses["testnet"] {
-			testnetWallet := wallet{}
-
-			name := walletMap["name"].(string)
-			if slices.Contains(names, name) {
-				return w, fmt.Errorf("wallet name %v is not unique", name)
-			}
-
-			testnetWallet.name = name
-			testnetWallet.address = address(walletMap["addr"].(string))
-			testnetWallet.threshold = int(walletMap["threshold"].(float64))
-
-			w.testnet = append(w.testnet, testnetWallet)
-			names = append(names, name)
-		}
-	}
-
-	return w, err
+	return
 }
 
 func parseEnv(content string) (config, error) {

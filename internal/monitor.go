@@ -35,13 +35,13 @@ type config struct {
 }
 
 type wallet struct {
-	address   address
-	threshold int
-	name      string
+	Address   address `json:"address"`
+	Threshold int     `json:"threshold"`
+	Name      string  `json:"name"`
 }
 type wallets struct {
-	mainnet []wallet
-	testnet []wallet
+	Mainnet []wallet `json:"mainnet"`
+	Testnet []wallet `json:"testnet"`
 }
 
 type monitor struct {
@@ -79,10 +79,10 @@ func NewMonitor(envPath string, jsonPath string) (monitor, error) {
 
 	substrate := map[network]client.Manager{}
 
-	if len(mon.wallets.mainnet) != 0 {
+	if len(mon.wallets.Mainnet) != 0 {
 		substrate[mainNetwork] = client.NewManager(SUBSTRATE_URLS[mainNetwork]...)
 	}
-	if len(mon.wallets.testnet) != 0 {
+	if len(mon.wallets.Testnet) != 0 {
 		substrate[testNetwork] = client.NewManager(SUBSTRATE_URLS[testNetwork]...)
 	}
 
@@ -101,14 +101,14 @@ func (m *monitor) Start() {
 			wallets := []wallet{}
 			switch network {
 			case mainNetwork:
-				wallets = m.wallets.mainnet
+				wallets = m.wallets.Mainnet
 			case testNetwork:
-				wallets = m.wallets.testnet
+				wallets = m.wallets.Testnet
 			}
 
-			for _, address := range wallets {
-				log.Debug().Msgf("monitoring for network %v, address %v", network, address)
-				err := m.sendMessage(manager, address)
+			for _, wallet := range wallets {
+				log.Debug().Msgf("monitoring for network %v, address %v", network, wallet.Address)
+				err := m.sendMessage(manager, wallet)
 				if err != nil {
 					log.Error().Err(err).Msg("monitoring failed with error")
 				}
@@ -125,19 +125,19 @@ func (m *monitor) getTelegramUrl() string {
 // sendMessage sends a message with the balance to a telegram bot
 // if it is less than the tft threshold
 func (m *monitor) sendMessage(manager client.Manager, wallet wallet) error {
-	balance, err := m.getBalance(manager, wallet.address)
+	balance, err := m.getBalance(manager, wallet.Address)
 	if err != nil {
 		return err
 	}
 
-	if balance >= float64(wallet.threshold) {
+	if balance >= float64(wallet.Threshold) {
 		return nil
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramUrl())
 	body, _ := json.Marshal(map[string]string{
 		"chat_id": m.env.chatId,
-		"text":    fmt.Sprintf("account with name:\n%v\nhas balance = %v", wallet.name, balance),
+		"text":    fmt.Sprintf("wallet %v with address:\n%v\nhas balance = %v", wallet.Name, wallet.Address, balance),
 	})
 	response, err := http.Post(
 		url,
