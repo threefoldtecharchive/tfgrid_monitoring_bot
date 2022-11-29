@@ -35,13 +35,14 @@ MINS=<number of minutes between each message>
 
 - Get the binary
 
-> Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases/tag/v1.0.0)
+> Download the latest from the [releases page](https://github.com/threefoldtech/tfgrid_monitoring_bot/releases)
 
 - Run the bot
 
 After downloading the binary
 
 ```bash
+sudo cp tfgrid_monitoring_bot /usr/local/bin
 tfgrid_monitoring_bot -e .env -w wallets.json
 ```
 
