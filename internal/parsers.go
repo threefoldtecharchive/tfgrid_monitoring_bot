@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	env "github.com/hashicorp/go-envparse"
 )
 
 func readFile(path string) ([]byte, error) {
@@ -29,64 +31,51 @@ func parseJsonIntoWallets(content []byte) (w wallets, err error) {
 }
 
 func parseEnv(content string) (config, error) {
-	env := config{}
+	cfg := config{}
 
-	testMnemonic := ""
-	mainMnemonic := ""
-	botToken := ""
-	chatId := ""
-	mins := 0
+	configMap, err := env.Parse(strings.NewReader(content))
+	if err != err {
+		return config{}, err
+	}
 
-	for _, line := range strings.Split(string(content), "\n") {
-		tokens := strings.Split(line, "=")
-		if len(tokens) != 2 {
-			continue
-		}
-		key, value := strings.TrimSpace(tokens[0]), strings.TrimSpace(tokens[1])
-
+	for key, value := range configMap {
 		switch key {
 		case "TESTNET_MNEMONIC":
-			testMnemonic = value
+			cfg.testMnemonic = value
 
 		case "MAINNET_MNEMONIC":
-			mainMnemonic = value
+			cfg.mainMnemonic = value
 
 		case "BOT_TOKEN":
-			botToken = value
+			cfg.botToken = value
 
 		case "CHAT_ID":
-			chatId = value
+			cfg.chatId = value
 
 		case "MINS":
 			intervalMins, err := strconv.Atoi(value)
 			if err != nil {
-				return env, err
+				return config{}, err
 			}
-			mins = intervalMins
+			cfg.intervalMins = intervalMins
 
 		default:
-			return env, fmt.Errorf("key %v is invalid", key)
+			return config{}, fmt.Errorf("key %v is invalid", key)
 		}
 	}
 
 	switch {
-	case testMnemonic == "":
-		return env, fmt.Errorf("TESTNET_MNEMONIC is missing")
-	case mainMnemonic == "":
-		return env, fmt.Errorf("MAINNET_MNEMONIC is missing")
-	case botToken == "":
-		return env, fmt.Errorf("BOT_TOKEN is missing")
-	case chatId == "":
-		return env, fmt.Errorf("CHAT_ID is missing")
-	case mins == 0:
-		return env, fmt.Errorf("MINS is 0")
+	case cfg.testMnemonic == "":
+		return config{}, fmt.Errorf("TESTNET_MNEMONIC is missing")
+	case cfg.mainMnemonic == "":
+		return config{}, fmt.Errorf("MAINNET_MNEMONIC is missing")
+	case cfg.botToken == "":
+		return config{}, fmt.Errorf("BOT_TOKEN is missing")
+	case cfg.chatId == "":
+		return config{}, fmt.Errorf("CHAT_ID is missing")
+	case cfg.intervalMins == 0:
+		return config{}, fmt.Errorf("MINS is 0")
 	}
 
-	return config{
-		testMnemonic: testMnemonic,
-		mainMnemonic: mainMnemonic,
-		botToken:     botToken,
-		chatId:       chatId,
-		intervalMins: mins,
-	}, nil
+	return cfg, nil
 }

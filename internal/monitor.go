@@ -27,11 +27,11 @@ var SUBSTRATE_URLS = map[network][]string{
 }
 
 type config struct {
-	testMnemonic string
-	mainMnemonic string
-	botToken     string
-	chatId       string
-	intervalMins int
+	testMnemonic string `env:"TESTNET_MNEMONIC"`
+	mainMnemonic string `env:"MAINNET_MNEMONIC"`
+	botToken     string `env:"BOT_TOKEN"`
+	chatId       string `env:"CHAT_ID"`
+	intervalMins int    `env:"MINS"`
 }
 
 type wallet struct {
