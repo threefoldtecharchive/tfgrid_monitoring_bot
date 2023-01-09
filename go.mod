@@ -8,7 +8,6 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/threefoldtech/go-rmb v0.2.2
 	github.com/threefoldtech/substrate-client v0.0.0-20221124101011-f107c2f64f85
-	github.com/threefoldtech/substrate-client-dev v0.0.1
 )
 
 require (
@@ -49,11 +48,3 @@ require (
 )
 
 replace github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.5 => github.com/threefoldtech/go-substrate-rpc-client/v4 v4.0.6-0.20220927094755-0f0d22c73cc7
-
-replace github.com/threefoldtech/substrate-client-dev v0.0.1 => ./internal/substrates/substrate-dev
-
-replace github.com/threefoldtech/substrate-client-test v0.0.1 => ./internal/substrates/substrate-test
-
-replace github.com/threefoldtech/substrate-client-qa v0.0.1 => ./internal/substrates/substrate-qa
-
-replace github.com/threefoldtech/substrate-client-main v0.0.1 => ./internal/substrates/substrate-main

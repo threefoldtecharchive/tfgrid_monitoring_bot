@@ -1,14 +1,14 @@
 package internal
 
 import (
-	subv2 "github.com/threefoldtech/substrate-client-dev"
+	substrate "github.com/threefoldtech/substrate-client"
 )
 
 // Identity is the user identity to be used in substrate
-type Identity subv2.Identity
+type Identity substrate.Identity
 
 // NewIdentityFromSr25519Phrase generates a new Sr25519 identity from mnemonics
 func NewIdentityFromSr25519Phrase(phrase string) (Identity, error) {
-	id, err := subv2.NewIdentityFromSr25519Phrase(phrase)
+	id, err := substrate.NewIdentityFromSr25519Phrase(phrase)
 	return Identity(id), err
 }
