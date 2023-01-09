@@ -19,7 +19,7 @@ func readFile(path string) ([]byte, error) {
 	return content, nil
 }
 
-func parseJsonIntoWallets(content []byte) (w wallets, err error) {
+func parseJSONIntoWallets(content []byte) (w wallets, err error) {
 	w = wallets{}
 	err = json.Unmarshal(content, &w)
 
@@ -34,12 +34,18 @@ func parseEnv(content string) (config, error) {
 	cfg := config{}
 
 	configMap, err := env.Parse(strings.NewReader(content))
-	if err != err {
+	if err != nil {
 		return config{}, err
 	}
 
 	for key, value := range configMap {
 		switch key {
+		case "DEVNET_MNEMONIC":
+			cfg.devMnemonic = value
+
+		case "QANET_MNEMONIC":
+			cfg.qaMnemonic = value
+
 		case "TESTNET_MNEMONIC":
 			cfg.testMnemonic = value
 
@@ -50,7 +56,7 @@ func parseEnv(content string) (config, error) {
 			cfg.botToken = value
 
 		case "CHAT_ID":
-			cfg.chatId = value
+			cfg.chatID = value
 
 		case "MINS":
 			intervalMins, err := strconv.Atoi(value)
@@ -69,9 +75,13 @@ func parseEnv(content string) (config, error) {
 		return config{}, fmt.Errorf("TESTNET_MNEMONIC is missing")
 	case cfg.mainMnemonic == "":
 		return config{}, fmt.Errorf("MAINNET_MNEMONIC is missing")
+	case cfg.devMnemonic == "":
+		return config{}, fmt.Errorf("DEVNET_MNEMONIC is missing")
+	case cfg.qaMnemonic == "":
+		return config{}, fmt.Errorf("QANET_MNEMONIC is missing")
 	case cfg.botToken == "":
 		return config{}, fmt.Errorf("BOT_TOKEN is missing")
-	case cfg.chatId == "":
+	case cfg.chatID == "":
 		return config{}, fmt.Errorf("CHAT_ID is missing")
 	case cfg.intervalMins == 0:
 		return config{}, fmt.Errorf("MINS is 0")

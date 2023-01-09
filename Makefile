@@ -40,10 +40,10 @@ spelling:
 staticcheck:
 	go run honnef.co/go/tools/cmd/staticcheck -- ./...
 
-test: 
+test: submodules
 	go test -v -vet=off ./...
 
-benchmarks: 
+benchmarks: submodules
 	go test -v -vet=off ./... -bench=. -count 1 -benchtime=10s -benchmem -run=^#
 
 coverage: clean 
@@ -54,12 +54,16 @@ coverage: clean
 testrace: verifiers
 	go test -v -race -vet=off ./...
 
-run: 
+run: submodules
 	go run main.go
 
 build:
 	go build -o bin/tfgridmon main.go 
 	
-clean:
+clean: submodules
 	rm ./coverage -rf
 	rm ./bin -rf
+
+submodules:
+	git submodule init
+	git submodule update
