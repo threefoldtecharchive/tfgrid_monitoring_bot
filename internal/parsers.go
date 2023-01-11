@@ -52,8 +52,17 @@ func parseEnv(content string) (config, error) {
 		case "MAINNET_MNEMONIC":
 			cfg.mainMnemonic = value
 
-		case "FARM_NAME":
-			cfg.farmName = value
+		case "DEV_FARM_NAME":
+			cfg.devFarmName = value
+
+		case "TEST_FARM_NAME":
+			cfg.testFarmName = value
+
+		case "QA_FARM_NAME":
+			cfg.qaFarmName = value
+
+		case "MAIN_FARM_NAME":
+			cfg.mainFarmName = value
 
 		case "BOT_TOKEN":
 			cfg.botToken = value
