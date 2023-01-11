@@ -1,179 +1,13 @@
 package internal
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"testing"
 
 	client "github.com/threefoldtech/substrate-client"
 )
-
-func TestParsers(t *testing.T) {
-	t.Run("test_no_file", func(t *testing.T) {
-		_, err := readFile("env.env")
-
-		if err == nil {
-			t.Errorf("expected error reading env.env")
-		}
-	})
-
-	t.Run("test_valid_file", func(t *testing.T) {
-		_, err := readFile("monitor.go")
-
-		if err != nil {
-			t.Errorf("expected no error, %v", err)
-		}
-	})
-
-	t.Run("test_wrong_env_no_test_mnemonic", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=TOKEN
-			CHAT_ID=ID
-			MINS=1
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, no TESTNET_MNEMONIC")
-		}
-	})
-
-	t.Run("test_wrong_env_no_main_mnemonic", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=
-			BOT_TOKEN=TOKEN
-			CHAT_ID=ID
-			MINS=1
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, no MAINNET_MNEMONIC")
-		}
-	})
-
-	t.Run("test_wrong_env_no_token", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=
-			CHAT_ID=ID
-			MINS=1
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, BOT_TOKEN is missing")
-		}
-	})
-
-	t.Run("test_wrong_env_no_id", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=
-			MINS=1
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, CHAT_ID is missing")
-		}
-	})
-
-	t.Run("test_wrong_env_0_mins", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=0
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, MINS is 0")
-		}
-	})
-
-	t.Run("test_wrong_env_string_mins", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=min
-		`
-
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, MINS is string")
-		}
-	})
-
-	t.Run("test_wrong_env_key", func(t *testing.T) {
-		envContent := `
-			key=key
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=10
-		`
-		_, err := parseEnv(envContent)
-
-		if err == nil {
-			t.Errorf("expected error, key is invalid")
-		}
-	})
-
-	t.Run("test_valid_env", func(t *testing.T) {
-		envContent := `
-			TESTNET_MNEMONIC=mnemonic
-			MAINNET_MNEMONIC=mnemonic
-			BOT_TOKEN=token
-			CHAT_ID=id
-			MINS=10
-		`
-		_, err := parseEnv(envContent)
-
-		if err != nil {
-			t.Errorf("parsing should be successful")
-		}
-	})
-
-	t.Run("test_valid_json", func(t *testing.T) {
-		content := `
-		{ 
-			"mainnet": [ { "name": "name", "address": "address", "threshold": 1} ],
-			"testnet": [ { "name": "name-test", "address": "address", "threshold": 1} ]   
-		}
-		`
-		_, err := parseJsonIntoWallets([]byte(content))
-
-		if err != nil {
-			t.Errorf("parsing should be successful")
-		}
-	})
-
-	t.Run("test_invalid_json", func(t *testing.T) {
-		content := `[]`
-		_, err := parseJsonIntoWallets([]byte(content))
-
-		if err == nil {
-			t.Errorf("parsing should fail")
-		}
-	})
-}
 
 func TestMonitor(t *testing.T) {
 	//json
@@ -205,6 +39,8 @@ func TestMonitor(t *testing.T) {
 
 	data = []byte(`TESTNET_MNEMONIC=mnemonic
 	MAINNET_MNEMONIC=mnemonic
+	DEVNET_MNEMONIC=mnemonic
+	QANET_MNEMONIC=mnemonic
 	BOT_TOKEN=token
 	CHAT_ID=id
 	MINS=10`)
@@ -215,8 +51,8 @@ func TestMonitor(t *testing.T) {
 	//managers
 	substrate := map[network]client.Manager{}
 
-	substrate[mainNetwork] = client.NewManager(SUBSTRATE_URLS[mainNetwork]...)
-	substrate[testNetwork] = client.NewManager(SUBSTRATE_URLS[testNetwork]...)
+	substrate[mainNetwork] = client.NewManager(SubstrateURLs[mainNetwork]...)
+	substrate[testNetwork] = client.NewManager(SubstrateURLs[testNetwork]...)
 
 	t.Run("test_invalid_monitor_env", func(t *testing.T) {
 		_, err := NewMonitor("env", jsonFile.Name())
@@ -286,8 +122,8 @@ func TestMonitor(t *testing.T) {
 			t.Errorf("monitor should be successful")
 		}
 
-		telegramUrl := monitor.getTelegramUrl()
-		if telegramUrl != want {
+		telegramURL := monitor.getTelegramURL()
+		if telegramURL != want {
 			t.Errorf("telegram wrong url")
 		}
 	})
@@ -371,6 +207,61 @@ func TestWrongFilesContent(t *testing.T) {
 
 		if err == nil {
 			t.Errorf("monitor should fail, wrong wallets")
+		}
+	})
+}
+
+func TestZosVersion(t *testing.T) {
+	//json
+	jsonFile, err := os.CreateTemp("", "*.json")
+
+	if err != nil {
+		t.Errorf("failed with error, %v", err)
+	}
+
+	defer jsonFile.Close()
+	defer os.Remove(jsonFile.Name())
+
+	data := []byte(`{ 
+		"mainnet": [ { "name": "name", "address": "address", "threshold": 1} ],
+		"testnet": [ { "name": "name-test", "address": "address", "threshold": 1} ] 
+	}`)
+	if _, err := jsonFile.Write(data); err != nil {
+		t.Error(err)
+	}
+
+	//env
+	envFile, err := os.CreateTemp("", "*.env")
+	if err != nil {
+		t.Errorf("failed with error, %v", err)
+	}
+
+	defer envFile.Close()
+	defer os.Remove(envFile.Name())
+
+	data = []byte(`TESTNET_MNEMONIC=mnemonic
+	MAINNET_MNEMONIC=mnemonic
+	DEVNET_MNEMONIC=mnemonic
+	QANET_MNEMONIC=mnemonic
+	BOT_TOKEN=token
+	CHAT_ID=id
+	MINS=10`)
+	if _, err := envFile.Write(data); err != nil {
+		t.Error(err)
+	}
+
+	t.Run("test_failed_system_versions", func(t *testing.T) {
+		mon, err := NewMonitor(envFile.Name(), jsonFile.Name())
+
+		if err != nil {
+			fmt.Printf("ver: %v\n", err)
+			t.Errorf("monitor should be successful")
+		}
+
+		_, err = mon.systemVersion(context.Background())
+
+		if err != nil {
+			t.Errorf("getting system versions failed")
 		}
 	})
 }

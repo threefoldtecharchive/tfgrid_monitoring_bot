@@ -1,6 +1,7 @@
 # tfgrid monitoring bot
 
 This is a bot to monitor the balance in accounts and send warnings if it is under some threshold.
+It also monitors the behavior of the rmb proxy
 
 ## How to start
 
@@ -10,6 +11,8 @@ This is a bot to monitor the balance in accounts and send warnings if it is unde
 ```env
 TESTNET_MNEMONIC=<your mainnet mnemonic>
 MAINNET_MNEMONIC=<your testnet mnemonic>
+DEVNET_MNEMONIC=<your testnet mnemonic>
+QANET_MNEMONIC=<your testnet mnemonic>
 BOT_TOKEN=<your token>
 CHAT_ID=<your chat ID>
 MINS=<number of minutes between each message>

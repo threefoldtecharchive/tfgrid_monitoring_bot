@@ -40,10 +40,10 @@ spelling:
 staticcheck:
 	go run honnef.co/go/tools/cmd/staticcheck -- ./...
 
-test: 
+test:
 	go test -v -vet=off ./...
 
-benchmarks: 
+benchmarks:
 	go test -v -vet=off ./... -bench=. -count 1 -benchtime=10s -benchmem -run=^#
 
 coverage: clean 
@@ -54,7 +54,7 @@ coverage: clean
 testrace: verifiers
 	go test -v -race -vet=off ./...
 
-run: 
+run:
 	go run main.go
 
 build:
