@@ -24,11 +24,3 @@ var ProxyUrls = map[network]string{
 	devNetwork:  "https://gridproxy.dev.grid.tf/",
 	qaNetwork:   "https://gridproxy.qa.grid.tf/",
 }
-
-// NodeTwins are some twins' IDs of some random nodes to be used in proxy check for every network
-var NodeTwins = map[network][]int{
-	testNetwork: {3, 4, 5, 7},
-	mainNetwork: {7, 16, 22, 24},
-	devNetwork:  {9, 11, 25, 21},
-	qaNetwork:   {9, 10},
-}

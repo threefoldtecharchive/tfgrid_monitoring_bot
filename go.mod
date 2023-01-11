@@ -7,7 +7,8 @@ require (
 	github.com/rs/zerolog v1.26.0
 	github.com/spf13/cobra v1.6.1
 	github.com/threefoldtech/go-rmb v0.2.2
-	github.com/threefoldtech/substrate-client v0.0.0-20221124101011-f107c2f64f85
+	github.com/threefoldtech/substrate-client v0.0.0-20230111124412-c251782691c3
+	github.com/threefoldtech/substrate-client-main v0.0.1
 )
 
 require (
@@ -48,3 +49,5 @@ require (
 )
 
 replace github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.5 => github.com/threefoldtech/go-substrate-rpc-client/v4 v4.0.6-0.20220927094755-0f0d22c73cc7
+
+replace github.com/threefoldtech/substrate-client-main v0.0.1 => github.com/threefoldtech/substrate-client v0.0.0-20230103083438-c6d86a2e6338

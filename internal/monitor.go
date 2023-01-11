@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	client "github.com/threefoldtech/substrate-client"
+	mainClient "github.com/threefoldtech/substrate-client-main"
 )
 
 type address string
@@ -22,6 +25,7 @@ type config struct {
 	mainMnemonic string `env:"MAINNET_MNEMONIC"`
 	devMnemonic  string `env:"DEVNET_MNEMONIC"`
 	qaMnemonic   string `env:"QANET_MNEMONIC"`
+	farmName     string `env:"FARM_NAME"`
 	botToken     string `env:"BOT_TOKEN"`
 	chatID       string `env:"CHAT_ID"`
 	intervalMins int    `env:"MINS"`
@@ -39,10 +43,13 @@ type wallets struct {
 
 // Monitor for bot monitoring
 type Monitor struct {
-	env       config
-	mnemonics map[network]string
-	wallets   wallets
-	substrate map[network]client.Manager
+	env                       config
+	mnemonics                 map[network]string
+	wallets                   wallets
+	workingNodesPerNetwork    map[network][]uint32
+	notWorkingNodesPerNetwork map[network][]uint32
+	substrate                 map[network]client.Manager
+	mainSubstrate             map[network]mainClient.Manager
 }
 
 // NewMonitor creates a new instance of monitor
@@ -72,19 +79,25 @@ func NewMonitor(envPath string, jsonPath string) (Monitor, error) {
 	mon.wallets = addresses
 	mon.env = env
 
-	substrate := map[network]client.Manager{}
+	mon.substrate = map[network]client.Manager{}
+	mon.mainSubstrate = map[network]mainClient.Manager{}
 
 	// all needed for proxy
 	for _, network := range networks {
-		substrate[network] = client.NewManager(SubstrateURLs[network]...)
+		if network == mainNetwork || network == testNetwork {
+			mon.mainSubstrate[network] = mainClient.NewManager(SubstrateURLs[network]...)
+		}
+		mon.substrate[network] = client.NewManager(SubstrateURLs[network]...)
 	}
-	mon.substrate = substrate
 
 	mon.mnemonics = map[network]string{}
 	mon.mnemonics[devNetwork] = mon.env.devMnemonic
 	mon.mnemonics[testNetwork] = mon.env.testMnemonic
 	mon.mnemonics[qaNetwork] = mon.env.qaMnemonic
 	mon.mnemonics[mainNetwork] = mon.env.mainMnemonic
+
+	mon.workingNodesPerNetwork = map[network][]uint32{}
+	mon.notWorkingNodesPerNetwork = map[network][]uint32{}
 
 	return mon, nil
 }
@@ -169,11 +182,15 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	message := ""
 
 	for _, network := range networks {
+
 		if _, ok := versions[network]; !ok {
-			message += fmt.Sprintf("Proxy for %v is not working ❌\n", network)
+			notWorkingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.notWorkingNodesPerNetwork[network])), ", "), "[]")
+			message += fmt.Sprintf("Proxy for %v is not working ❌\nNodes tested but failed: %v\n\n", network, notWorkingTestedNodes)
 			continue
 		}
-		message += fmt.Sprintf("Proxy for %v is working ✅\n", network)
+
+		workingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.workingNodesPerNetwork[network])), ", "), "[]")
+		message += fmt.Sprintf("Proxy for %v is working ✅\nNodes successfully tested: %v\n\n", network, workingTestedNodes)
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramURL())
@@ -227,7 +244,6 @@ type version struct {
 
 // systemVersion executes system version cmd
 func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error) {
-	const cmd = "zos.system.version"
 	versions := map[network]version{}
 
 	for _, network := range networks {
@@ -258,11 +274,51 @@ func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error
 			continue
 		}
 
-		var ver version
-		for _, nodeTwin := range NodeTwins[network] {
-			err = devProxyBus.Call(ctx, uint32(nodeTwin), cmd, nil, &ver)
+		farmID, err := con.GetFarmByName(m.env.farmName)
+		if err != nil {
+			log.Error().Err(err).Msgf("cannot get farm ID for farm '%s'", m.env.farmName)
+			continue
+		}
+
+		farmNodes, err := con.GetNodes(farmID)
+		if err != nil {
+			log.Error().Err(err).Msgf("cannot get farm nodes for farm %d", farmID)
+			continue
+		}
+
+		rand.Shuffle(len(farmNodes), func(i, j int) { farmNodes[i], farmNodes[j] = farmNodes[j], farmNodes[i] })
+		var randomNodes []uint32
+		if len(farmNodes) < 4 {
+			randomNodes = farmNodes[:]
+		} else {
+			randomNodes = farmNodes[:4]
+		}
+
+		for _, NodeID := range randomNodes {
+
+			// substrate for main and test is different
+			if network == mainNetwork || network == testNetwork {
+				mainCon, err := m.mainSubstrate[network].Substrate()
+				if err != nil {
+					log.Error().Err(err).Msgf("substrate connection for %v network failed", network)
+					continue
+				}
+				defer mainCon.Close()
+
+				ver, err := m.checkNodeSystemVersionMainnet(ctx, mainCon, devProxyBus, NodeID, network)
+				if err != nil {
+					log.Error().Err(err).Msgf("check node %d failed", NodeID)
+					continue
+				}
+
+				versions[network] = ver
+				continue
+			}
+
+			ver, err := m.checkNodeSystemVersion(ctx, con, devProxyBus, NodeID, network)
 			if err != nil {
-				log.Error().Err(err).Msgf("proxy bus getting system version for %v network failed using node twin %v", network, nodeTwin)
+				log.Error().Err(err).Msgf("check node %d failed", NodeID)
+				continue
 			}
 
 			versions[network] = ver
@@ -270,4 +326,44 @@ func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error
 	}
 
 	return versions, nil
+}
+
+func (m *Monitor) checkNodeSystemVersion(ctx context.Context, con *client.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
+	const cmd = "zos.system.version"
+	var ver version
+
+	node, err := con.GetNode(NodeID)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("cannot get node %d. failed with error: %w", NodeID, err)
+	}
+
+	err = proxyBus.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("proxy bus getting system version for %v network failed using node twin %v with node ID %v. failed with error: %w", net, node.TwinID, NodeID, err)
+	}
+
+	m.workingNodesPerNetwork[net] = append(m.workingNodesPerNetwork[net], NodeID)
+	return ver, nil
+}
+
+func (m *Monitor) checkNodeSystemVersionMainnet(ctx context.Context, con *mainClient.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
+	const cmd = "zos.system.version"
+	var ver version
+
+	node, err := con.GetNode(NodeID)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("cannot get node %d. failed with error: %w", NodeID, err)
+	}
+
+	err = proxyBus.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("proxy bus getting system version for %v network failed using node twin %v with node ID %v. failed with error: %w", net, node.TwinID, NodeID, err)
+	}
+
+	m.workingNodesPerNetwork[net] = append(m.workingNodesPerNetwork[net], NodeID)
+	return ver, nil
 }
