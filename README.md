@@ -93,6 +93,6 @@ make test
 
 - Check `goreleaser check`
 - Create a tag `git tag -a v1.0.4 -m "release v1.0.4"`
-- Push the tag `git push origin v1.0.2`
+- Push the tag `git push origin v1.0.4`
 - export GITHUB_TOKEN=<GITHUB_TOKEN>
 - goreleaser release
