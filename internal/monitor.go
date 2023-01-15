@@ -178,6 +178,9 @@ func (m *Monitor) sendMessage(manager client.Manager, wallet wallet) error {
 
 // sendProxyCheckMessage checks if proxy is working against all networks
 func (m *Monitor) sendProxyCheckMessage() error {
+	m.notWorkingNodesPerNetwork = map[network][]uint32{}
+	m.workingNodesPerNetwork = map[network][]uint32{}
+
 	versions, err := m.systemVersion(context.Background())
 	if err != nil {
 		return err
@@ -299,6 +302,7 @@ func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error
 		}
 
 		for _, NodeID := range randomNodes {
+			log.Debug().Msgf("check node %d", NodeID)
 			ver, err := m.checkNodeSystemVersion(ctx, con, devProxyBus, NodeID, network)
 			if err != nil {
 				log.Error().Err(err).Msgf("check node %d failed", NodeID)

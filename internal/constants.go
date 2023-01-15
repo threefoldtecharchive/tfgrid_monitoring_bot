@@ -7,7 +7,7 @@ const (
 	qaNetwork   network = "qanet"
 )
 
-var networks = []network{mainNetwork, testNetwork, devNetwork, qaNetwork}
+var networks = []network{devNetwork, qaNetwork, testNetwork, mainNetwork}
 
 // SubstrateURLs for substrate urls
 var SubstrateURLs = map[network][]string{
