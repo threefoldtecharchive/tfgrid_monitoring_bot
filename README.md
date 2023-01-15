@@ -11,8 +11,8 @@ It also monitors the behavior of the rmb proxy
 ```env
 TESTNET_MNEMONIC=<your mainnet mnemonic>
 MAINNET_MNEMONIC=<your testnet mnemonic>
-DEVNET_MNEMONIC=<your testnet mnemonic>
-QANET_MNEMONIC=<your testnet mnemonic>
+DEVNET_MNEMONIC=<your devnet mnemonic>
+QANET_MNEMONIC=<your qanet mnemonic>
 DEV_FARM_NAME=Freefarm
 QA_FARM_NAME=Freefarm
 MAIN_FARM_NAME=Freefarm
