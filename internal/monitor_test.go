@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -258,7 +257,7 @@ func TestZosVersion(t *testing.T) {
 			t.Errorf("monitor should be successful")
 		}
 
-		_, err = mon.systemVersion(context.Background())
+		_, err = mon.systemVersion()
 
 		if err != nil {
 			t.Errorf("getting system versions failed")
