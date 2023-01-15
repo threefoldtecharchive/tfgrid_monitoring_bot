@@ -181,7 +181,7 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
 
-	versions, err := m.systemVersion(context.Background())
+	versions, err := m.systemVersion()
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ type version struct {
 }
 
 // systemVersion executes system version cmd
-func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error) {
+func (m *Monitor) systemVersion() (map[network]version, error) {
 	versions := map[network]version{}
 
 	for _, network := range networks {
@@ -303,7 +303,7 @@ func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error
 
 		for _, NodeID := range randomNodes {
 			log.Debug().Msgf("check node %d", NodeID)
-			ver, err := m.checkNodeSystemVersion(ctx, con, devProxyBus, NodeID, network)
+			ver, err := m.checkNodeSystemVersion(con, devProxyBus, NodeID, network)
 			if err != nil {
 				log.Error().Err(err).Msgf("check node %d failed", NodeID)
 				continue
@@ -316,7 +316,7 @@ func (m *Monitor) systemVersion(ctx context.Context) (map[network]version, error
 	return versions, nil
 }
 
-func (m *Monitor) checkNodeSystemVersion(ctx context.Context, con *client.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
+func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
 	const cmd = "zos.system.version"
 	var ver version
 
@@ -325,6 +325,9 @@ func (m *Monitor) checkNodeSystemVersion(ctx context.Context, con *client.Substr
 		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
 		return ver, fmt.Errorf("cannot get node %d. failed with error: %w", NodeID, err)
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*3))
+	defer cancel()
 
 	err = proxyBus.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
 	if err != nil {
