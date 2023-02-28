@@ -2,14 +2,11 @@ package internal
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
-	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -181,7 +178,7 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
 
-	versions, err := m.systemVersion()
+	versions, err := m.pingGridNetworks()
 	if err != nil {
 		return err
 	}
@@ -191,13 +188,11 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	for _, network := range networks {
 
 		if _, ok := versions[network]; !ok {
-			notWorkingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.notWorkingNodesPerNetwork[network])), ", "), "[]")
-			message += fmt.Sprintf("Proxy for %v is not working ❌\nNodes tested but failed: %v\n\n", network, notWorkingTestedNodes)
+			message += fmt.Sprintf("Proxy for %v is not working ❌\n\n", network)
 			continue
 		}
 
-		workingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.workingNodesPerNetwork[network])), ", "), "[]")
-		message += fmt.Sprintf("Proxy for %v is working ✅\nNodes successfully tested: %v\n\n", network, workingTestedNodes)
+		message += fmt.Sprintf("Proxy for %v is working ✅\n\n", network)
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramURL())
@@ -244,97 +239,23 @@ func (m *Monitor) getBalance(manager client.Manager, address address) (float64, 
 	return float64(balance.Free.Int64()) / math.Pow(10, 7), nil
 }
 
-type version struct {
-	ZOS   string `json:"zos"`
-	ZInit string `json:"zinit"`
-}
-
-// systemVersion executes system version cmd
-func (m *Monitor) systemVersion() (map[network]version, error) {
-	versions := map[network]version{}
+// pingGridNetwork pings the different grid proxy networks
+func (m *Monitor) pingGridNetworks() (map[network]bool, error) {
+	versions := map[network]bool{}
 
 	for _, network := range networks {
-		log.Debug().Msgf("get system version for network %v", network)
-
-		identity, err := NewIdentityFromSr25519Phrase(m.mnemonics[network])
+		log.Debug().Msgf("pinging grid proxy for network %s", network)
+		gridProxy, err := NewGridProxyClient(ProxyUrls[network])
 		if err != nil {
-			log.Error().Err(err).Msgf("creating new identity for %v network failed", network)
+			log.Error().Err(err).Msgf("grid proxy for %v network failed", network)
 			continue
 		}
 
-		con, err := m.substrate[network].Substrate()
-		if err != nil {
-			log.Error().Err(err).Msgf("substrate connection for %v network failed", network)
+		if err := gridProxy.Ping(); err != nil {
+			log.Error().Err(err).Msgf("failed to ping grid proxy on network %v", network)
 			continue
 		}
-		defer con.Close()
-
-		twinID, err := con.GetTwinByPubKey(identity.PublicKey())
-		if err != nil {
-			log.Error().Err(err).Msgf("returning twin ID for %v network failed", network)
-			continue
-		}
-
-		devProxyBus, err := NewProxyBus(ProxyUrls[network], twinID, *con, identity, true)
-		if err != nil {
-			log.Error().Err(err).Msgf("proxy bus for %v network failed", network)
-			continue
-		}
-
-		farmID, err := con.GetFarmByName(m.farms[network])
-		if err != nil {
-			log.Error().Err(err).Msgf("cannot get farm ID for farm '%s'", m.farms[network])
-			continue
-		}
-
-		farmNodes, err := con.GetNodes(farmID)
-		if err != nil {
-			log.Error().Err(err).Msgf("cannot get farm nodes for farm %d", farmID)
-			continue
-		}
-
-		rand.Shuffle(len(farmNodes), func(i, j int) { farmNodes[i], farmNodes[j] = farmNodes[j], farmNodes[i] })
-		var randomNodes []uint32
-		if len(farmNodes) < 4 {
-			randomNodes = farmNodes[:]
-		} else {
-			randomNodes = farmNodes[:4]
-		}
-
-		for _, NodeID := range randomNodes {
-			log.Debug().Msgf("check node %d", NodeID)
-			ver, err := m.checkNodeSystemVersion(con, devProxyBus, NodeID, network)
-			if err != nil {
-				log.Error().Err(err).Msgf("check node %d failed", NodeID)
-				continue
-			}
-
-			versions[network] = ver
-		}
+		versions[network] = true
 	}
-
 	return versions, nil
-}
-
-func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
-	const cmd = "zos.system.version"
-	var ver version
-
-	node, err := con.GetNode(NodeID)
-	if err != nil {
-		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
-		return ver, fmt.Errorf("cannot get node %d. failed with error: %w", NodeID, err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*3))
-	defer cancel()
-
-	err = proxyBus.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
-	if err != nil {
-		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
-		return ver, fmt.Errorf("proxy bus getting system version for %v network failed using node twin %v with node ID %v. failed with error: %w", net, node.TwinID, NodeID, err)
-	}
-
-	m.workingNodesPerNetwork[net] = append(m.workingNodesPerNetwork[net], NodeID)
-	return ver, nil
 }
