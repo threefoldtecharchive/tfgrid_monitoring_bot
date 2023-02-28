@@ -23,6 +23,7 @@ func NewGridProxyClient(endpoint string) (*GridProxyClient, error) {
 	}, nil
 }
 
+// Ping send a GET request to grid proxy ping endpoint and checks the response for pong
 func (r GridProxyClient) Ping() error {
 	pingURL := fmt.Sprintf("%s/ping", r.endpoint)
 
