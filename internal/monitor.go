@@ -178,7 +178,7 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
 
-	gridProxyHealthCheck, err := m.pingGridNetworks()
+	gridProxyHealthCheck, err := m.pingGridProxies()
 	if err != nil {
 		return err
 	}
@@ -239,8 +239,8 @@ func (m *Monitor) getBalance(manager client.Manager, address address) (float64, 
 	return float64(balance.Free.Int64()) / math.Pow(10, 7), nil
 }
 
-// pingGridNetwork pings the different grid proxy networks
-func (m *Monitor) pingGridNetworks() (map[network]bool, error) {
+// pingGridProxies pings the different grid proxy networks
+func (m *Monitor) pingGridProxies() (map[network]bool, error) {
 	gridProxyHealthCheck := map[network]bool{}
 
 	for _, network := range networks {
