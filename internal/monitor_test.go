@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -248,18 +249,18 @@ func TestZosVersion(t *testing.T) {
 		t.Error(err)
 	}
 
-	// t.Run("test_failed_system_versions", func(t *testing.T) {
-	// 	mon, err := NewMonitor(envFile.Name(), jsonFile.Name())
+	t.Run("test_failed_system_versions", func(t *testing.T) {
+		mon, err := NewMonitor(envFile.Name(), jsonFile.Name())
 
-	// 	if err != nil {
-	// 		fmt.Printf("ver: %v\n", err)
-	// 		t.Errorf("monitor should be successful")
-	// 	}
+		if err != nil {
+			fmt.Printf("ver: %v\n", err)
+			t.Errorf("monitor should be successful")
+		}
 
-	// 	_, err = mon.systemVersion()
+		_, err = mon.systemVersion()
 
-	// 	if err != nil {
-	// 		t.Errorf("getting system versions failed")
-	// 	}
-	// })
+		if err != nil {
+			t.Errorf("getting system versions failed")
+		}
+	})
 }

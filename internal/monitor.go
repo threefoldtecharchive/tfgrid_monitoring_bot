@@ -2,14 +2,20 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/rmb-sdk-go"
+	"github.com/threefoldtech/rmb-sdk-go/direct"
 	client "github.com/threefoldtech/substrate-client"
 )
 
@@ -127,10 +133,10 @@ func (m *Monitor) Start() {
 			}
 		}
 
-		log.Debug().Msgf("monitoring proxy for all networks")
-		err := m.sendProxyCheckMessage()
+		log.Debug().Msg("monitoring proxy and relay for all networks")
+		err := m.monitorNewtorks()
 		if err != nil {
-			log.Error().Err(err).Msg("monitoring proxy failed with error")
+			log.Error().Err(err).Msg("monitoring networks failed with error")
 		}
 	}
 }
@@ -173,12 +179,17 @@ func (m *Monitor) sendMessage(manager client.Manager, wallet wallet) error {
 	return nil
 }
 
-// sendProxyCheckMessage checks if proxy is working against all networks
-func (m *Monitor) sendProxyCheckMessage() error {
+// monitorNewtorks checks if proxy and relay is working against all networks
+func (m *Monitor) monitorNewtorks() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
 
 	gridProxyHealthCheck, err := m.pingGridProxies()
+	if err != nil {
+		return err
+	}
+
+	versions, err := m.systemVersion()
 	if err != nil {
 		return err
 	}
@@ -188,11 +199,19 @@ func (m *Monitor) sendProxyCheckMessage() error {
 	for _, network := range networks {
 
 		if _, ok := gridProxyHealthCheck[network]; !ok {
-			message += fmt.Sprintf("Proxy for %v is not working ❌\n\n", network)
-			continue
+			message += fmt.Sprintf("Proxy for %v is not working ❌\n", network)
+		} else {
+			message += fmt.Sprintf("Proxy for %v is working ✅\n", network)
 		}
 
-		message += fmt.Sprintf("Proxy for %v is working ✅\n\n", network)
+		if _, ok := versions[network]; !ok {
+			notWorkingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.notWorkingNodesPerNetwork[network])), ", "), "[]")
+			message += fmt.Sprintf("Nodes tested but failed (relay): %v ❌\n\n", notWorkingTestedNodes)
+			continue
+		}
+		workingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.workingNodesPerNetwork[network])), ", "), "[]")
+		message += fmt.Sprintf("Nodes successfully tested (relay): %v ✅\n\n", workingTestedNodes)
+
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramURL())
@@ -258,4 +277,92 @@ func (m *Monitor) pingGridProxies() (map[network]bool, error) {
 		gridProxyHealthCheck[network] = true
 	}
 	return gridProxyHealthCheck, nil
+}
+
+type version struct {
+	ZOS   string `json:"zos"`
+	ZInit string `json:"zinit"`
+}
+
+// systemVersion executes system version cmd
+func (m *Monitor) systemVersion() (map[network]version, error) {
+	versions := map[network]version{}
+
+	for _, network := range networks {
+		log.Debug().Msgf("get system version for network %v", network)
+
+		con, err := m.substrate[network].Substrate()
+		if err != nil {
+			log.Error().Err(err).Msgf("substrate connection for %v network failed", network)
+			continue
+		}
+		defer con.Close()
+
+		sessionID := generateSessionID()
+		rmbClient, err := direct.NewClient("sr25519", m.mnemonics[network], RelayURLS[network], sessionID, con)
+		if err != nil {
+			log.Error().Err(err).Msgf("error getting relay for network %v", network)
+			continue
+		}
+
+		farmID, err := con.GetFarmByName(m.farms[network])
+		if err != nil {
+			log.Error().Err(err).Msgf("cannot get farm ID for farm '%s'", m.farms[network])
+			continue
+		}
+
+		farmNodes, err := con.GetNodes(farmID)
+		if err != nil {
+			log.Error().Err(err).Msgf("cannot get farm nodes for farm %d", farmID)
+			continue
+		}
+
+		rand.Shuffle(len(farmNodes), func(i, j int) { farmNodes[i], farmNodes[j] = farmNodes[j], farmNodes[i] })
+		var randomNodes []uint32
+		if len(farmNodes) < 4 {
+			randomNodes = farmNodes[:]
+		} else {
+			randomNodes = farmNodes[:4]
+		}
+
+		for _, NodeID := range randomNodes {
+			log.Debug().Msgf("check node %d", NodeID)
+			ver, err := m.checkNodeSystemVersion(con, rmbClient, NodeID, network)
+			if err != nil {
+				log.Error().Err(err).Msgf("check node %d failed", NodeID)
+				continue
+			}
+
+			versions[network] = ver
+		}
+	}
+
+	return versions, nil
+}
+
+func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, rmbClient rmb.Client, NodeID uint32, net network) (version, error) {
+	const cmd = "zos.system.version"
+	var ver version
+
+	node, err := con.GetNode(NodeID)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("cannot get node %d. failed with error: %w", NodeID, err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*3))
+	defer cancel()
+
+	err = rmbClient.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
+	if err != nil {
+		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
+		return ver, fmt.Errorf("proxy bus getting system version for %v network failed using node twin %v with node ID %v. failed with error: %w", net, node.TwinID, NodeID, err)
+	}
+
+	m.workingNodesPerNetwork[net] = append(m.workingNodesPerNetwork[net], NodeID)
+	return ver, nil
+}
+
+func generateSessionID() string {
+	return fmt.Sprintf("monbot-%d", os.Getpid())
 }
