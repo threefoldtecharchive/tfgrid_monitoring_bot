@@ -134,7 +134,7 @@ func (m *Monitor) Start() {
 		}
 
 		log.Debug().Msg("monitoring proxy and relay for all networks")
-		err := m.monitorNewtorks()
+		err := m.monitorNetworks()
 		if err != nil {
 			log.Error().Err(err).Msg("monitoring networks failed with error")
 		}
@@ -179,8 +179,8 @@ func (m *Monitor) sendMessage(manager client.Manager, wallet wallet) error {
 	return nil
 }
 
-// monitorNewtorks checks if proxy and relay is working against all networks
-func (m *Monitor) monitorNewtorks() error {
+// monitorNetworks checks if proxy and relay is working against all networks
+func (m *Monitor) monitorNetworks() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
 
