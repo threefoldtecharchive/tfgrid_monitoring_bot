@@ -9,10 +9,13 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/rmb-sdk-go"
+	"github.com/threefoldtech/rmb-sdk-go/direct"
 	client "github.com/threefoldtech/substrate-client"
 )
 
@@ -130,10 +133,10 @@ func (m *Monitor) Start() {
 			}
 		}
 
-		log.Debug().Msgf("monitoring proxy for all networks")
-		err := m.sendProxyCheckMessage()
+		log.Debug().Msg("monitoring proxy and relay for all networks")
+		err := m.monitorNetworks()
 		if err != nil {
-			log.Error().Err(err).Msg("monitoring proxy failed with error")
+			log.Error().Err(err).Msg("monitoring networks failed with error")
 		}
 	}
 }
@@ -176,10 +179,15 @@ func (m *Monitor) sendMessage(manager client.Manager, wallet wallet) error {
 	return nil
 }
 
-// sendProxyCheckMessage checks if proxy is working against all networks
-func (m *Monitor) sendProxyCheckMessage() error {
+// monitorNetworks checks if proxy and relay is working against all networks
+func (m *Monitor) monitorNetworks() error {
 	m.notWorkingNodesPerNetwork = map[network][]uint32{}
 	m.workingNodesPerNetwork = map[network][]uint32{}
+
+	gridProxyHealthCheck, err := m.pingGridProxies()
+	if err != nil {
+		return err
+	}
 
 	versions, err := m.systemVersion()
 	if err != nil {
@@ -190,14 +198,20 @@ func (m *Monitor) sendProxyCheckMessage() error {
 
 	for _, network := range networks {
 
-		if _, ok := versions[network]; !ok {
-			notWorkingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.notWorkingNodesPerNetwork[network])), ", "), "[]")
-			message += fmt.Sprintf("Proxy for %v is not working ❌\nNodes tested but failed: %v\n\n", network, notWorkingTestedNodes)
-			continue
+		if _, ok := gridProxyHealthCheck[network]; !ok {
+			message += fmt.Sprintf("Proxy for %v is not working ❌\n", network)
+		} else {
+			message += fmt.Sprintf("Proxy for %v is working ✅\n", network)
 		}
 
+		if _, ok := versions[network]; !ok {
+			notWorkingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.notWorkingNodesPerNetwork[network])), ", "), "[]")
+			message += fmt.Sprintf("Nodes tested but failed (relay): %v ❌\n\n", notWorkingTestedNodes)
+			continue
+		}
 		workingTestedNodes := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(m.workingNodesPerNetwork[network])), ", "), "[]")
-		message += fmt.Sprintf("Proxy for %v is working ✅\nNodes successfully tested: %v\n\n", network, workingTestedNodes)
+		message += fmt.Sprintf("Nodes successfully tested (relay): %v ✅\n\n", workingTestedNodes)
+
 	}
 
 	url := fmt.Sprintf("%s/sendMessage", m.getTelegramURL())
@@ -244,6 +258,27 @@ func (m *Monitor) getBalance(manager client.Manager, address address) (float64, 
 	return float64(balance.Free.Int64()) / math.Pow(10, 7), nil
 }
 
+// pingGridProxies pings the different grid proxy networks
+func (m *Monitor) pingGridProxies() (map[network]bool, error) {
+	gridProxyHealthCheck := map[network]bool{}
+
+	for _, network := range networks {
+		log.Debug().Msgf("pinging grid proxy for network %s", network)
+		gridProxy, err := NewGridProxyClient(ProxyUrls[network])
+		if err != nil {
+			log.Error().Err(err).Msgf("grid proxy for %v network failed", network)
+			continue
+		}
+
+		if err := gridProxy.Ping(); err != nil {
+			log.Error().Err(err).Msgf("failed to ping grid proxy on network %v", network)
+			continue
+		}
+		gridProxyHealthCheck[network] = true
+	}
+	return gridProxyHealthCheck, nil
+}
+
 type version struct {
 	ZOS   string `json:"zos"`
 	ZInit string `json:"zinit"`
@@ -256,12 +291,6 @@ func (m *Monitor) systemVersion() (map[network]version, error) {
 	for _, network := range networks {
 		log.Debug().Msgf("get system version for network %v", network)
 
-		identity, err := NewIdentityFromSr25519Phrase(m.mnemonics[network])
-		if err != nil {
-			log.Error().Err(err).Msgf("creating new identity for %v network failed", network)
-			continue
-		}
-
 		con, err := m.substrate[network].Substrate()
 		if err != nil {
 			log.Error().Err(err).Msgf("substrate connection for %v network failed", network)
@@ -269,15 +298,10 @@ func (m *Monitor) systemVersion() (map[network]version, error) {
 		}
 		defer con.Close()
 
-		twinID, err := con.GetTwinByPubKey(identity.PublicKey())
+		sessionID := generateSessionID()
+		rmbClient, err := direct.NewClient("sr25519", m.mnemonics[network], RelayURLS[network], sessionID, con)
 		if err != nil {
-			log.Error().Err(err).Msgf("returning twin ID for %v network failed", network)
-			continue
-		}
-
-		devProxyBus, err := NewProxyBus(ProxyUrls[network], twinID, *con, identity, true)
-		if err != nil {
-			log.Error().Err(err).Msgf("proxy bus for %v network failed", network)
+			log.Error().Err(err).Msgf("error getting relay for network %v", network)
 			continue
 		}
 
@@ -303,7 +327,7 @@ func (m *Monitor) systemVersion() (map[network]version, error) {
 
 		for _, NodeID := range randomNodes {
 			log.Debug().Msgf("check node %d", NodeID)
-			ver, err := m.checkNodeSystemVersion(con, devProxyBus, NodeID, network)
+			ver, err := m.checkNodeSystemVersion(con, rmbClient, NodeID, network)
 			if err != nil {
 				log.Error().Err(err).Msgf("check node %d failed", NodeID)
 				continue
@@ -316,7 +340,7 @@ func (m *Monitor) systemVersion() (map[network]version, error) {
 	return versions, nil
 }
 
-func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, proxyBus *ProxyBus, NodeID uint32, net network) (version, error) {
+func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, rmbClient rmb.Client, NodeID uint32, net network) (version, error) {
 	const cmd = "zos.system.version"
 	var ver version
 
@@ -329,7 +353,7 @@ func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, proxyBus *ProxyB
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*3))
 	defer cancel()
 
-	err = proxyBus.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
+	err = rmbClient.Call(ctx, uint32(node.TwinID), cmd, nil, &ver)
 	if err != nil {
 		m.notWorkingNodesPerNetwork[net] = append(m.notWorkingNodesPerNetwork[net], NodeID)
 		return ver, fmt.Errorf("proxy bus getting system version for %v network failed using node twin %v with node ID %v. failed with error: %w", net, node.TwinID, NodeID, err)
@@ -337,4 +361,8 @@ func (m *Monitor) checkNodeSystemVersion(con *client.Substrate, proxyBus *ProxyB
 
 	m.workingNodesPerNetwork[net] = append(m.workingNodesPerNetwork[net], NodeID)
 	return ver, nil
+}
+
+func generateSessionID() string {
+	return fmt.Sprintf("monbot-%d", os.Getpid())
 }

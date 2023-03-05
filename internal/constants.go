@@ -24,3 +24,11 @@ var ProxyUrls = map[network]string{
 	devNetwork:  "https://gridproxy.dev.grid.tf/",
 	qaNetwork:   "https://gridproxy.qa.grid.tf/",
 }
+
+// RelayURLS for relay urls
+var RelayURLS = map[network]string{
+	devNetwork:  "wss://relay.dev.grid.tf",
+	testNetwork: "wss://relay.test.grid.tf",
+	qaNetwork:   "wss://relay.qa.grid.tf",
+	mainNetwork: "wss://relay.grid.tf",
+}

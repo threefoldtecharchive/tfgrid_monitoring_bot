@@ -3,21 +3,23 @@ module github.com/rawdaGastan/tfgrid_monitoring_bot
 go 1.19
 
 require (
-	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rs/zerolog v1.26.0
+	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.1
-	github.com/threefoldtech/go-rmb v0.2.2
-	github.com/threefoldtech/substrate-client v0.0.0-20230111124412-c251782691c3
+	github.com/threefoldtech/substrate-client v0.0.0-20230203145052-45be626d311b
 )
 
 require (
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/go-redis/redis/v8 v8.11.4 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/gomodule/redigo v1.8.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
-	golang.org/x/net v0.0.0-20220403103023-749bd193bc2b // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
+	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
+	google.golang.org/protobuf v1.23.0 // indirect
 )
 
 require (
@@ -41,6 +43,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/threefoldtech/rmb-sdk-go v1.0.0
 	github.com/vedhavyas/go-subkey v1.0.3 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/sys v0.1.0 // indirect
