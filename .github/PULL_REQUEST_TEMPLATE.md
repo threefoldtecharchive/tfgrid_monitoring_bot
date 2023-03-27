@@ -12,7 +12,7 @@ List of related issues
 
 ### Checklist
 
-- [ ] Tests included
-- [ ] Build pass
-- [ ] Documentation
-- [ ] Code format and docstrings
+-   [ ] Tests included
+-   [ ] Build pass
+-   [ ] Documentation
+-   [ ] Code format and docstrings

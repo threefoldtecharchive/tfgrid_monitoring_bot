@@ -1,3 +1,4 @@
+// Package internal contains all logic for monitoring service
 package internal
 
 const (

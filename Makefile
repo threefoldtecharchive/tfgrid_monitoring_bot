@@ -50,6 +50,9 @@ coverage: clean
 	mkdir coverage
 	go test -v -vet=off ./... -coverprofile=coverage/coverage.out
 	go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+	@${GOPATH}/bin/gopherbadger -png=false -md="README.md"
+	rm coverage.out
+
 
 testrace: verifiers
 	go test -v -race -vet=off ./...

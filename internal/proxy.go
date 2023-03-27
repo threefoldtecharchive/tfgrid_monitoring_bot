@@ -1,3 +1,4 @@
+// Package internal contains all logic for monitoring service
 package internal
 
 import (
@@ -14,7 +15,7 @@ type GridProxyClient struct {
 	endpoint string
 }
 
-// NewProxyBus generates a new proxy bus
+// NewGridProxyClient generates a new proxy client for endpoint
 func NewGridProxyClient(endpoint string) (*GridProxyClient, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
