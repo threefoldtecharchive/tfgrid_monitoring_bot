@@ -1,6 +1,6 @@
 # tfgrid monitoring bot
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c83698ff5b6c43ec93db5618907a5a40)](https://app.codacy.com/gh/threefoldtech/tfgrid_monitoring_bot/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade) <a href='https://github.com/jpoles1/gopherbadger' target='_blank'>![gopherbadger-tag-do-not-edit](https://img.shields.io/badge/Go%20Coverage-42%25-brightgreen.svg?longCache=true&style=flat)</a>
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c83698ff5b6c43ec93db5618907a5a40)](https://app.codacy.com/gh/threefoldtech/tfgrid_monitoring_bot/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade) <a href='https://github.com/jpoles1/gopherbadger' target='_blank'>![gopherbadger-tag-do-not-edit](https://img.shields.io/badge/Go%20Coverage-42%25-brightgreen.svg?longCache=true&style=flat)</a> [![Testing](https://github.com/threefoldtech/tfgrid_monitoring_bot/actions/workflows/test.yml/badge.svg?branch=development)](https://github.com/threefoldtech/tfgrid_monitoring_bot/actions/workflows/test.yml) [![Testing](https://github.com/threefoldtech/tfgrid_monitoring_bot/actions/workflows/lint.yml/badge.svg?branch=development)](https://github.com/threefoldtech/tfgrid_monitoring_bot/actions/workflows/lint.yml) [![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://dependabot.com/)
 
 This is a bot to monitor the balance in accounts and send warnings if it is under some threshold.
 It also monitors the behavior of the rmb proxy
@@ -94,7 +94,7 @@ make test
 ## Release
 
 -   Check `goreleaser check`
--   Create a tag `git tag -a v1.0.5 -m "release v1.0.5"`
--   Push the tag `git push origin v1.0.5`
+-   Create a tag `git tag -a v1.0.5 -m "release v1.0.6"`
+-   Push the tag `git push origin v1.0.6`
 -   export GITHUB_TOKEN=<GITHUB_TOKEN>
 -   goreleaser release
