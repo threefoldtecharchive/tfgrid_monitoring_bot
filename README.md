@@ -96,5 +96,4 @@ make test
 -   Check `goreleaser check`
 -   Create a tag `git tag -a v1.0.5 -m "release v1.0.6"`
 -   Push the tag `git push origin v1.0.6`
--   export GITHUB_TOKEN=<GITHUB_TOKEN>
--   goreleaser release
+-   the release workflow will release the tag automatically
