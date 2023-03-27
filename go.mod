@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.1
-	github.com/threefoldtech/substrate-client v0.0.0-20230203145052-45be626d311b
+	github.com/threefoldtech/substrate-client v0.1.3
 )
 
 require (
