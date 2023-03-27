@@ -1,3 +1,4 @@
+// Package internal contains all logic for monitoring service
 package internal
 
 import (
@@ -299,7 +300,7 @@ func (m *Monitor) systemVersion() (map[network]version, error) {
 		defer con.Close()
 
 		sessionID := generateSessionID()
-		rmbClient, err := direct.NewClient("sr25519", m.mnemonics[network], RelayURLS[network], sessionID, con)
+		rmbClient, err := direct.NewClient(context.Background(), "sr25519", m.mnemonics[network], RelayURLS[network], sessionID, con, true)
 		if err != nil {
 			log.Error().Err(err).Msgf("error getting relay for network %v", network)
 			continue

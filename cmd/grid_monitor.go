@@ -1,3 +1,4 @@
+// Package cmd for monitoring cmdline
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 
@@ -19,10 +20,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rawdaGastan/tfgrid_monitoring_bot/internal"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/threefoldtech/tfgrid_monitoring_bot/internal"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,6 +34,7 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 		env, err := cmd.Flags().GetString("env")
 		if err != nil {
