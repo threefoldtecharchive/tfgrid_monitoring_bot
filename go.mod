@@ -8,7 +8,7 @@ require (
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/cobra v1.7.0
 	github.com/threefoldtech/rmb-sdk-go v1.0.1-0.20230316162347-255e7faa0006
-	github.com/threefoldtech/substrate-client v0.1.3
+	github.com/threefoldtech/substrate-client v0.1.5
 )
 
 require (
